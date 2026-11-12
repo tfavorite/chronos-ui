@@ -1,0 +1,537 @@
+{
+    "openapi": "3.0.0",
+    "info": {
+        "title": "Configuration Service API",
+        "description": "API for managing parts and configurations in the manufacturing system",
+        "version": "1.0.0"
+    },
+    "servers": [
+        {
+            "url": "/prod",
+            "description": "Production API server"
+        },
+        {
+            "url": "/",
+            "description": "Local development server"
+        }
+    ],
+    "security": [
+        {
+            "ApiKeyAuth": []
+        }
+    ],
+    "components": {
+        "securitySchemes": {
+            "ApiKeyAuth": {
+                "type": "apiKey",
+                "name": "x-api-key",
+                "in": "header"
+            }
+        },
+        "schemas": {
+            "HealthCheck": {
+                "type": "object",
+                "properties": {
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "ok"
+                        ],
+                        "example": "ok"
+                    },
+                    "message": {
+                        "type": "string",
+                        "enum": [
+                            "API is running"
+                        ],
+                        "example": "API is running"
+                    }
+                },
+                "required": [
+                    "status",
+                    "message"
+                ]
+            },
+            "Part": {
+                "type": "object",
+                "properties": {
+                    "uuid": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "partNo": {
+                        "type": "string",
+                        "example": "TM-1010"
+                    },
+                    "name": {
+                        "type": "string",
+                        "example": "Engine Part"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "configuration",
+                            "active",
+                            "draft",
+                            "deprecated",
+                            "obsolete",
+                            "experimental",
+                            "retired",
+                            "recalled"
+                        ],
+                        "example": "active"
+                    },
+                    "unit": {
+                        "type": "string",
+                        "example": "kg"
+                    }
+                },
+                "required": [
+                    "uuid",
+                    "partNo",
+                    "name",
+                    "status",
+                    "unit"
+                ]
+            },
+            "PartNotFoundError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "enum": [
+                            "Part not found"
+                        ],
+                        "example": "Part not found"
+                    }
+                },
+                "required": [
+                    "error"
+                ]
+            },
+            "InternalError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "example": "Failed to fetch part"
+                    }
+                },
+                "required": [
+                    "error"
+                ]
+            },
+            "ChildConfigurations": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "properties": {
+                        "uuid": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "123e4567-e89b-12d3-a456-426614174004"
+                        },
+                        "partUuid": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "123e4567-e89b-12d3-a456-426614174005"
+                        },
+                        "quantity": {
+                            "type": "integer",
+                            "example": 4
+                        },
+                        "endUnitSerialNo": {
+                            "type": "string",
+                            "nullable": true,
+                            "example": "SN67890"
+                        }
+                    },
+                    "required": [
+                        "uuid",
+                        "partUuid",
+                        "quantity"
+                    ]
+                }
+            },
+            "ConfigurationNotFoundError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "enum": [
+                            "Configuration not found"
+                        ],
+                        "example": "Configuration not found"
+                    }
+                },
+                "required": [
+                    "error"
+                ]
+            },
+            "AllowableStatuses": {
+                "type": "object",
+                "properties": {
+                    "partUuid": {
+                        "type": "string",
+                        "format": "uuid",
+                        "example": "123e4567-e89b-12d3-a456-426614174000"
+                    },
+                    "currentStatus": {
+                        "type": "string",
+                        "enum": [
+                            "configuration",
+                            "active",
+                            "draft",
+                            "deprecated",
+                            "obsolete",
+                            "experimental",
+                            "retired",
+                            "recalled"
+                        ],
+                        "example": "active"
+                    },
+                    "allowableStatuses": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "configuration",
+                                "active",
+                                "draft",
+                                "deprecated",
+                                "obsolete",
+                                "experimental",
+                                "retired",
+                                "recalled"
+                            ],
+                            "example": "active"
+                        },
+                        "example": [
+                            "active",
+                            "deprecated"
+                        ]
+                    }
+                },
+                "required": [
+                    "partUuid",
+                    "currentStatus",
+                    "allowableStatuses"
+                ]
+            },
+            "InvalidStatusChangeError": {
+                "type": "object",
+                "properties": {
+                    "error": {
+                        "type": "string",
+                        "enum": [
+                            "Invalid status change"
+                        ],
+                        "example": "Invalid status change"
+                    },
+                    "allowableStatuses": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "enum": [
+                                "configuration",
+                                "active",
+                                "draft",
+                                "deprecated",
+                                "obsolete",
+                                "experimental",
+                                "retired",
+                                "recalled"
+                            ],
+                            "example": "active"
+                        },
+                        "example": [
+                            "active",
+                            "deprecated"
+                        ]
+                    }
+                },
+                "required": [
+                    "error",
+                    "allowableStatuses"
+                ]
+            },
+            "UpdatePartBody": {
+                "type": "object",
+                "properties": {
+                    "unit": {
+                        "type": "string",
+                        "example": "lbs"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "configuration",
+                            "active",
+                            "draft",
+                            "deprecated",
+                            "obsolete",
+                            "experimental",
+                            "retired",
+                            "recalled"
+                        ],
+                        "example": "active"
+                    }
+                }
+            }
+        },
+        "parameters": {}
+    },
+    "paths": {
+        "/api/health": {
+            "get": {
+                "tags": [
+                    "Health"
+                ],
+                "summary": "API health check",
+                "description": "Check if the API is running",
+                "responses": {
+                    "200": {
+                        "description": "API is healthy",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/HealthCheck"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/parts/{uuid}": {
+            "get": {
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get a part by UUID",
+                "description": "Retrieve a specific part using its UUID",
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "required": true,
+                        "name": "uuid",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The requested part",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Part"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartNotFoundError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalError"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            "put": {
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Update a part",
+                "description": "Update a specific part by UUID",
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "required": true,
+                        "name": "uuid",
+                        "in": "path"
+                    }
+                ],
+                "requestBody": {
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/UpdatePartBody"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "The updated part",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Part"
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid status change",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InvalidStatusChangeError"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartNotFoundError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/configs/children": {
+            "get": {
+                "tags": [
+                    "Configurations"
+                ],
+                "summary": "Get child configurations",
+                "description": "Get child configurations for a parent UUID (or root configs if parentUuid is null)",
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "123e4567-e89b-12d3-a456-426614174001"
+                        },
+                        "required": false,
+                        "name": "parentUuid",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Child configurations",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ChildConfigurations"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Configuration not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ConfigurationNotFoundError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/api/parts/{uuid}/allowable-statuses": {
+            "get": {
+                "tags": [
+                    "Parts"
+                ],
+                "summary": "Get allowable statuses for a part",
+                "description": "Get allowable statuses for a specific part based on its relationships",
+                "parameters": [
+                    {
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "123e4567-e89b-12d3-a456-426614174000"
+                        },
+                        "required": true,
+                        "name": "uuid",
+                        "in": "path"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Allowable statuses for the part",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/AllowableStatuses"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Part not found",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/PartNotFoundError"
+                                }
+                            }
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/InternalError"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
