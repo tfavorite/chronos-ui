@@ -3,3 +3,8 @@
 .claude/*
 CLAUDE.md
 INSTRUCTIONS.md
+docs/api/.bruno-chronos
+node_modules
+node_modules
+dist
+*.tsbuildinfo

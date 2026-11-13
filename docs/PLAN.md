@@ -32,57 +32,61 @@ Read with `docs/api/README.md` (API shapes + observed data). Work one phase per 
 - Right: details for the selected configuration's part, plus actions.
 - Selecting a row highlights every loaded row that uses the same part. That shows the part/config distinction visually.
 
+## Layout change (after phase 4)
+
+The sidebar tree was replaced by drill-down navigation (URL hash path, breadcrumb of configurations, part panel + "Contains" list). `ConfigNode`/`EndUnitList` are gone. Phase 5 and 6 items below were met in the new layout: `PartPanel`, `StatusChange`, `PartUsage` (crawl-based usage count and total quantity), `navigation/`. Tree guide lines, highlight and expand-all no longer apply.
+
 ## Phases
 
 ### 1. Scaffold
-- [ ] Vite react-ts template, TanStack Query, Vitest + RTL + jsdom
-- [ ] `envPrefix: 'CHRONOS_'`, typed `import.meta.env` in `src/vite-env.d.ts`
-- [ ] Mantine setup per its Vite guide: `postcss-preset-mantine` + `postcss-simple-vars`, `postcss.config.cjs`, import `@mantine/core/styles.css` and `@mantine/notifications/styles.css`
-- [ ] `main.tsx`: `MantineProvider` (with `<Notifications />`) wrapping `QueryClientProvider`; React Query Devtools in dev only
-- [ ] Test setup: wrap renders in a `renderWithProviders` helper; add the `matchMedia` and `ResizeObserver` stubs Mantine needs in jsdom
-- [ ] Update `CLAUDE.md` with dev/build/lint/test/single-test commands
+- [x] Vite react-ts template, TanStack Query, Vitest + RTL + jsdom
+- [x] `envPrefix: 'CHRONOS_'`, typed `import.meta.env` in `src/vite-env.d.ts`
+- [x] Mantine setup per its Vite guide: `postcss-preset-mantine` + `postcss-simple-vars`, `postcss.config.cjs`, import `@mantine/core/styles.css` and `@mantine/notifications/styles.css`
+- [x] `main.tsx`: `MantineProvider` (with `<Notifications />`) wrapping `QueryClientProvider`; React Query Devtools in dev only
+- [x] Test setup: wrap renders in a `renderWithProviders` helper; add the `matchMedia` and `ResizeObserver` stubs Mantine needs in jsdom
+- [x] Update `CLAUDE.md` with dev/build/lint/test/single-test commands
 
 ### 2. API layer (`src/api/`)
-- [ ] `types.ts`: `Part`, `PartStatus`, `Configuration`, `AllowableStatuses`
-- [ ] `client.ts`: `request<T>(path, init)` adds the `x-api-key` header, parses JSON, and throws `ApiError { status, message, allowableStatuses? }`
-- [ ] Normalize all three error shapes: `{error: string}`, `{message}`, and the Zod `{error: {message}}`. Network failure is status 0 with a friendly message.
-- [ ] Functions: `getRootConfigs`, `getChildConfigs(parentUuid)`, `getPart(uuid)`, `getAllowedStatuses(uuid)`, `updatePart(uuid, body)`
-- [ ] Unit tests for `request` error normalization
+- [x] `types.ts`: `Part`, `PartStatus`, `Configuration`, `AllowableStatuses`
+- [x] `client.ts`: `request<T>(path, init)` adds the `x-api-key` header, parses JSON, and throws `ApiError { status, message, allowableStatuses? }`
+- [x] Normalize all three error shapes: `{error: string}`, `{message}`, and the Zod `{error: {message}}`. Network failure is status 0 with a friendly message.
+- [x] Functions: `getRootConfigs`, `getChildConfigs(parentUuid)`, `getPart(uuid)`, `getAllowedStatuses(uuid)`, `updatePart(uuid, body)`
+- [x] Unit tests for `request` error normalization
 
 ### 3. Query hooks (`src/api/queries.ts`)
-- [ ] Key factory: `['configs', 'roots']`, `['configs', 'children', parentUuid]`, `['part', uuid]`, `['part', uuid, 'allowed']`
-- [ ] `useRootConfigs`, `useChildConfigs(uuid, enabled)`, `usePart(uuid)`, `useAllowedStatuses(uuid)`
-- [ ] Parts and configs: `staleTime` 5 min. Allowed statuses: `staleTime: 0` (they depend on relationships).
-- [ ] Retry: none on 4xx, up to 2 on 5xx/network
-- [ ] `useUpdatePart`: on success, `setQueryData(['part', uuid], updated)` and invalidate `['part']` allowed queries (one part's change can affect others' transitions)
+- [x] Key factory: `['configs', 'roots']`, `['configs', 'children', parentUuid]`, `['part', uuid]`, `['part', uuid, 'allowed']`
+- [x] `useRootConfigs`, `useChildConfigs(uuid, enabled)`, `usePart(uuid)`, `useAllowedStatuses(uuid)`
+- [x] Parts and configs: `staleTime` 5 min. Allowed statuses: `staleTime: 0` (they depend on relationships).
+- [x] Retry: none on 4xx, up to 2 on 5xx/network
+- [x] `useUpdatePart`: on success, `setQueryData(['part', uuid], updated)` and invalidate `['part']` allowed queries (one part's change can affect others' transitions)
 
 ### 4. Tree navigation
-- [ ] `EndUnitList`: roots sorted by serial, with a filter box to find a serial
-- [ ] `ConfigNode`: row shows part no, name, `×qty unit`, status badge. Children are fetched only once the row is expanded (`enabled: expanded`).
-- [ ] Each row has its own loading spinner and an inline error with a Retry button. An empty result becomes a leaf (no chevron after load).
-- [ ] Rows are keyed by config UUID (the same part can appear twice under one parent)
-- [ ] Accessibility: `role="tree"`/`treeitem`, `aria-expanded`, arrow-key navigation, visible focus. Large tap targets (techs, possibly gloves/tablets).
-- [ ] Track selection as `{ configUuid, partUuid, path: Part names[] }` in `App`
+- [x] `EndUnitList`: roots sorted by serial, with a filter box to find a serial
+- [x] `ConfigNode`: row shows part no, name, `×qty unit`, status badge. Children are fetched only once the row is expanded (`enabled: expanded`).
+- [x] Each row has its own loading spinner and an inline error with a Retry button. An empty result becomes a leaf (no chevron after load).
+- [x] Rows are keyed by config UUID (the same part can appear twice under one parent)
+- [x] Accessibility: `role="tree"`/`treeitem`, `aria-expanded`, arrow-key navigation, visible focus. Large tap targets (techs, possibly gloves/tablets).
+- [x] Track selection as `{ configUuid, partUuid, path: Part names[] }` in `App`
 
 ### 5. Part details + status change
-- [ ] `PartPanel`: part no, name, status, unit, quantity in this config, breadcrumb path
-- [ ] Status change: fetch allowed statuses when the panel opens and show them as buttons/select, excluding the current status. If none are allowed, say "This part's status is locked" instead of rendering an empty control.
-- [ ] Confirm step in plain language: "Change TM-1020 Power Cell from active to deprecated? This updates the part everywhere it is used, including other time machines."
-- [ ] On 400 "Invalid status change": show the message and refresh the allowed list from the error's `allowableStatuses`
-- [ ] Confirm in a Mantine `Modal`. Success/failure toasts via `notifications.show`. On error, the panel stays usable with the old value shown.
-- [ ] Short status descriptions in a tooltip or legend (technicians have little training)
+- [x] `PartPanel`: part no, name, status, unit, quantity in this config, breadcrumb path
+- [x] Status change: fetch allowed statuses when the panel opens and show them as buttons/select, excluding the current status. If none are allowed, say "This part's status is locked" instead of rendering an empty control.
+- [x] Confirm step in plain language: "Change TM-1020 Power Cell from active to deprecated? This updates the part everywhere it is used, including other time machines."
+- [x] On 400 "Invalid status change": show the message and refresh the allowed list from the error's `allowableStatuses`
+- [x] Confirm in a Mantine `Modal`. Success/failure toasts via `notifications.show`. On error, the panel stays usable with the old value shown.
+- [x] Short status descriptions in a tooltip or legend (technicians have little training)
 
 ### 6. Relationship visualization
-- [ ] Same-part highlight across loaded rows, plus "Used N times in loaded trees" in the panel
-- [ ] Tree guide lines (indent connectors) so depth reads at a glance
-- [ ] "Expand all" per end unit (trees are ~26 nodes, so this is cheap)
-- [ ] Stretch: total quantity of the selected part in this machine (product of quantities along each path, summed)
+- [x] Same-part highlight across loaded rows, plus "Used N times in loaded trees" in the panel
+- [x] Tree guide lines (indent connectors) so depth reads at a glance
+- [x] "Expand all" per end unit (trees are ~26 nodes, so this is cheap)
+- [x] Stretch: total quantity of the selected part in this machine (product of quantities along each path, summed)
 
 ### 7. Polish + docs
-- [ ] App-level error boundary; health-check banner if the API is unreachable or the key is wrong (403)
-- [ ] One `statusMeta` map (Badge color + label + plain-language description per status); text is always shown, never color alone
-- [ ] Stretch: unit editing (PUT supports `unit`)
-- [ ] README: setup, `.env.example`, design decisions (why TanStack Query, lazy tree, shared-part warning, key-in-bundle caveat), what I'd do next
+- [x] App-level error boundary; health-check banner if the API is unreachable or the key is wrong (403)
+- [x] One `statusMeta` map (Badge color + label + plain-language description per status); text is always shown, never color alone
+- [x] Stretch: unit editing (PUT supports `unit`)
+- [x] README: setup, `.env.example`, design decisions (why TanStack Query, lazy tree, shared-part warning, key-in-bundle caveat), what I'd do next
 
 ## Budget notes ($20 key, Sonnet 5.5)
 
