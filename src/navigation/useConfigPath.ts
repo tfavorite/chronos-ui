@@ -3,7 +3,7 @@ import { useMemo, useSyncExternalStore } from 'react'
 import { getChildConfigs } from '../api/client'
 import { queryKeys } from '../api/queries'
 import type { Configuration } from '../api/types'
-import { formatPath, parsePath } from './path'
+import { parsePath } from './path'
 
 function subscribe(onChange: () => void): () => void {
   window.addEventListener('hashchange', onChange)
@@ -14,10 +14,6 @@ function subscribe(onChange: () => void): () => void {
 export function useHashUuids(): string[] {
   const hash = useSyncExternalStore(subscribe, () => window.location.hash)
   return useMemo(() => parsePath(hash), [hash])
-}
-
-export function navigateTo(uuids: string[]): void {
-  window.location.hash = formatPath(uuids)
 }
 
 interface ResolvedPath {

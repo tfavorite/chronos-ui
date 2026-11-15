@@ -2,28 +2,32 @@ import type { AllowableStatuses, Configuration, Part, PartStatus, UpdatePartBody
 
 export class ApiError extends Error {
   status: number
-  allowableStatuses?: PartStatus[]
+  body: unknown // the parsed response body, for callers that need endpoint-specific fields
 
-  constructor(status: number, message: string, allowableStatuses?: PartStatus[]) {
+  constructor(status: number, message: string, body: unknown = null) {
     super(message)
     this.name = 'ApiError'
     this.status = status
-    this.allowableStatuses = allowableStatuses
+    this.body = body
   }
 }
 
-// The API reports errors in three shapes: {error: string}, {message: string},
-// and a Zod object {error: {message: string}}. Reduce them to one string.
-function extractMessage(body: unknown, fallback: string): string {
-  if (typeof body !== 'object' || body === null) return fallback
-  const { error, message } = body as { error?: unknown; message?: unknown }
-  if (typeof error === 'string') return error
-  if (typeof error === 'object' && error !== null) {
-    const nested = (error as { message?: unknown }).message
-    if (typeof nested === 'string') return nested
+// The API reports errors in several shapes: {error: string}, {message: string}, a Zod object
+// {error: {name: 'ZodError', message: <JSON dump>}}, and sometimes plain text.
+// Reduce them to one message that is safe to show a technician.
+function extractMessage(status: number, body: unknown): string {
+  if (status === 403) return 'Access denied. The API key is missing or was rejected.'
+  if (status >= 500) return 'The server had a problem. Please try again.'
+
+  if (typeof body === 'string' && body.trim() !== '') return body
+  if (typeof body === 'object' && body !== null) {
+    const { error, message } = body as { error?: unknown; message?: unknown }
+    if (typeof error === 'string') return error
+    // Zod messages are a raw JSON dump meant for developers, so don't show them.
+    if (typeof error === 'object' && error !== null) return 'The request was not accepted: some input was invalid.'
+    if (typeof message === 'string') return message
   }
-  if (typeof message === 'string') return message
-  return fallback
+  return `Request failed (${status})`
 }
 
 export async function request<T>(path: string, init: RequestInit = {}): Promise<T> {
@@ -32,7 +36,8 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     response = await fetch(`${import.meta.env.CHRONOS_API_URL}${path}`, {
       ...init,
       headers: {
-        'Content-Type': 'application/json',
+        // Only requests with a body need a content type.
+        ...(init.body ? { 'Content-Type': 'application/json' } : {}),
         'x-api-key': import.meta.env.CHRONOS_API_KEY,
         ...init.headers,
       },
@@ -41,26 +46,22 @@ export async function request<T>(path: string, init: RequestInit = {}): Promise<
     throw new ApiError(0, 'Cannot reach the server. Check your connection and try again.')
   }
 
-  // Error bodies and successful bodies are both JSON, but guard against empty/invalid ones.
-  let body: unknown = null
+  // Bodies are normally JSON, but some errors are plain text and some responses are empty.
+  const text = await response.text().catch(() => '')
+  let body: unknown = text === '' ? null : text
   try {
-    body = await response.json()
+    body = JSON.parse(text)
   } catch {
-    body = null
+    // keep the plain text (or null when empty)
   }
 
   if (!response.ok) {
-    const allowable = (body as { allowableStatuses?: PartStatus[] } | null)?.allowableStatuses
-    throw new ApiError(
-      response.status,
-      extractMessage(body, `Request failed (${response.status})`),
-      Array.isArray(allowable) ? allowable : undefined,
-    )
+    throw new ApiError(response.status, extractMessage(response.status, body), body)
   }
   return body as T
 }
 
-// Omitting parentUuid returns the root configurations (end units).
+// Omitting parentUuid returns the root configurations.
 export function getChildConfigs(parentUuid?: string): Promise<Configuration[]> {
   const query = parentUuid ? `?parentUuid=${encodeURIComponent(parentUuid)}` : ''
   return request<Configuration[]>(`/api/configs/children${query}`)
@@ -87,4 +88,11 @@ export function updatePart(uuid: string, body: UpdatePartBody): Promise<Part> {
 
 export function getHealth(): Promise<{ status: string; message: string }> {
   return request('/api/health')
+}
+
+// A rejected status change (400) includes the statuses the server would have accepted.
+export function getAllowableStatusesFromError(error: ApiError): PartStatus[] | undefined {
+  if (typeof error.body !== 'object' || error.body === null) return undefined
+  const { allowableStatuses } = error.body as { allowableStatuses?: unknown }
+  return Array.isArray(allowableStatuses) ? (allowableStatuses as PartStatus[]) : undefined
 }

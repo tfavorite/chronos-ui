@@ -16,7 +16,7 @@ Read with `docs/api/README.md` (API shapes + observed data). Work one phase per 
 
 ```
 ┌───────────────────────────────────────────────────────────────┐
-│ Chronos Temporal Control        [ Find end unit: 000__ ]      │
+│ Chronos Temporal Control Interface   Find end unit: 000__ ]   │
 ├──────────────────────────────┬────────────────────────────────┤
 │ ▾ SN 00001  TM-1000 Time M.. │ TM-1020 · Power Cell           │
 │   ▸ TM-1130 Time Control  x1 │ Time Machine › Safety System   │
@@ -74,7 +74,7 @@ The sidebar tree was replaced by drill-down navigation (URL hash path, breadcrum
 - [x] Confirm step in plain language: "Change TM-1020 Power Cell from active to deprecated? This updates the part everywhere it is used, including other time machines."
 - [x] On 400 "Invalid status change": show the message and refresh the allowed list from the error's `allowableStatuses`
 - [x] Confirm in a Mantine `Modal`. Success/failure toasts via `notifications.show`. On error, the panel stays usable with the old value shown.
-- [x] Short status descriptions in a tooltip or legend (technicians have little training)
+- [x] ~~Short status descriptions in a tooltip or legend~~ (dropped: the API does not define what statuses mean)
 
 ### 6. Relationship visualization
 - [x] Same-part highlight across loaded rows, plus "Used N times in loaded trees" in the panel
@@ -84,7 +84,7 @@ The sidebar tree was replaced by drill-down navigation (URL hash path, breadcrum
 
 ### 7. Polish + docs
 - [x] App-level error boundary; health-check banner if the API is unreachable or the key is wrong (403)
-- [x] One `statusMeta` map (Badge color + label + plain-language description per status); text is always shown, never color alone
+- [x] One `statusMeta` map (Badge color + label per status); text is always shown, never color alone
 - [x] Stretch: unit editing (PUT supports `unit`)
 - [x] README: setup, `.env.example`, design decisions (why TanStack Query, lazy tree, shared-part warning, key-in-bundle caveat), what I'd do next
 

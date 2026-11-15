@@ -8,6 +8,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import { ErrorBoundary } from './components/ErrorBoundary.tsx'
+import { isDebugEnabled } from './features.ts'
 
 const queryClient = new QueryClient()
 
@@ -21,7 +22,7 @@ if (container) {
           <ErrorBoundary>
             <App />
           </ErrorBoundary>
-          {import.meta.env.DEV && <ReactQueryDevtools initialIsOpen={false} />}
+          {import.meta.env.DEV && isDebugEnabled() && <ReactQueryDevtools initialIsOpen={false} />}
         </QueryClientProvider>
       </MantineProvider>
     </StrictMode>,

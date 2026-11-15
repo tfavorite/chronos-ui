@@ -11,6 +11,13 @@ export const queryKeys = {
   children: (parentUuid: string) => ['configs', 'children', parentUuid] as const,
   part: (uuid: string) => ['part', uuid] as const,
   allowed: (uuid: string) => ['part', uuid, 'allowed'] as const,
+  machineTree: (rootUuid: string) => ['machine-tree', rootUuid] as const,
+  health: ['health'] as const,
+}
+
+// True for every part's allowed-statuses key, whichever part it belongs to.
+function isAllowedKey(key: readonly unknown[]): boolean {
+  return key[0] === 'part' && key[2] === 'allowed'
 }
 
 // Don't retry client errors (4xx); they won't fix themselves. Retry network/5xx twice.
@@ -66,7 +73,11 @@ export function useUpdatePart(uuid: string) {
       // Every tree node reading this part updates immediately.
       queryClient.setQueryData(queryKeys.part(uuid), updated)
       // Allowed transitions may depend on related parts, so refetch all of them.
-      queryClient.invalidateQueries({ queryKey: ['part'], predicate: (q) => q.queryKey[2] === 'allowed' })
+      queryClient.invalidateQueries({ predicate: (query) => isAllowedKey(query.queryKey) })
+    },
+    onError: (error) => {
+      // Part was removed by someone else: refetch so the panel shows that instead of stale data.
+      if (error.status === 404) queryClient.invalidateQueries({ queryKey: queryKeys.part(uuid) })
     },
   })
 }
@@ -82,13 +93,16 @@ async function loadTree(queryClient: QueryClient, config: Configuration): Promis
 
 // Loads a whole machine (one request per parent, in parallel per level). Only runs when `enabled`,
 // because the API has no "where is this part used" endpoint, so we have to crawl.
+// Once a machine has been crawled, its result stays in the cache, so later visits show it
+// without another click. `enabled` is only needed for the first crawl.
 export function useMachineTree(root: Configuration, enabled: boolean) {
   const queryClient = useQueryClient()
+  const alreadyLoaded = queryClient.getQueryData(queryKeys.machineTree(root.uuid)) !== undefined
   return useQuery<TreeNode, ApiError>({
-    queryKey: ['machine-tree', root.uuid],
+    queryKey: queryKeys.machineTree(root.uuid),
     queryFn: () => loadTree(queryClient, root),
     staleTime: FIVE_MINUTES,
-    enabled,
+    enabled: enabled || alreadyLoaded,
     retry,
   })
 }
@@ -96,7 +110,7 @@ export function useMachineTree(root: Configuration, enabled: boolean) {
 // Used for a banner when the API is unreachable or the key is rejected.
 export function useHealth() {
   return useQuery<{ status: string; message: string }, ApiError>({
-    queryKey: ['health'],
+    queryKey: queryKeys.health,
     queryFn: getHealth,
     staleTime: 60 * 1000,
     refetchInterval: 60 * 1000,

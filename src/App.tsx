@@ -1,8 +1,10 @@
 import { Alert, AppShell, Button, Container, Group, Loader, Stack, Title } from '@mantine/core'
 import { ConfigBreadcrumb } from './components/ConfigBreadcrumb'
+import { FluxCapacitorIcon } from './components/FluxCapacitorIcon'
 import { HealthBanner } from './components/HealthBanner'
 import { ConfigView } from './components/ConfigView'
-import { navigateTo, useHashUuids, useResolvedPath } from './navigation/useConfigPath'
+import { pathTo } from './navigation/path'
+import { useHashUuids, useResolvedPath } from './navigation/useConfigPath'
 
 export default function App() {
   // Position in the hierarchy comes from the URL, not component state.
@@ -12,24 +14,25 @@ export default function App() {
   return (
     <AppShell header={{ height: 56 }} padding="md">
       <AppShell.Header>
-        <Group h="100%" px="md">
-          <Title order={4}>Chronos Temporal Control</Title>
+        <Group h="100%" px="md" gap="xs">
+          <FluxCapacitorIcon size={26} />
+          <Title order={4}>Chronos Temporal Control Interface</Title>
         </Group>
       </AppShell.Header>
       <AppShell.Main>
-        <Container size="md">
+        <Container size="md" ml={0}>
           <HealthBanner />
           {resolved.status === 'pending' && <Loader />}
           {(resolved.status === 'error' || resolved.status === 'not-found') && (
             <Alert color="red" title="Cannot open this location">
               {resolved.error?.message ?? 'This configuration no longer exists.'}
-              <Button mt="xs" size="xs" display="flex" w="fit-content" onClick={() => navigateTo([])}>Back to end units</Button>
+              <Button component="a" href={pathTo([])} mt="xs" size="xs" display="flex" w="fit-content">Back to root configurations</Button>
             </Alert>
           )}
           {resolved.status === 'ready' && (
             <Stack>
-              <ConfigBreadcrumb path={resolved.path} onNavigate={(depth) => navigateTo(uuids.slice(0, depth))} />
-              <ConfigView path={resolved.path} onOpen={(config) => navigateTo([...uuids, config.uuid])} />
+              <ConfigBreadcrumb path={resolved.path} />
+              <ConfigView path={resolved.path} />
             </Stack>
           )}
         </Container>

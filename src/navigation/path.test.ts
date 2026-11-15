@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatPath, parsePath } from './path'
+import { formatPath, parsePath, pathTo } from './path'
 
 describe('path', () => {
   it('formats', () => {
@@ -11,5 +11,13 @@ describe('path', () => {
     expect(parsePath('')).toEqual([])
     expect(parsePath('#/')).toEqual([])
     expect(parsePath('#/a//b')).toEqual(['a', 'b'])
+  })
+  it('builds a URL from a route of configurations', () => {
+    const route = [
+      { uuid: 'a', partUuid: 'p', quantity: 1 },
+      { uuid: 'b', partUuid: 'q', quantity: 2 },
+    ]
+    expect(pathTo(route)).toBe('#/a/b')
+    expect(pathTo([])).toBe('#/')
   })
 })

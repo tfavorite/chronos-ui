@@ -1,14 +1,15 @@
-import { Alert, Anchor, Button, List, Text } from '@mantine/core'
+import { Anchor, Button, List, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useMachineTree, usePart } from '../api/queries'
 import type { Configuration, Part } from '../api/types'
 import { countPartUsages, findPartPaths, totalQuantity } from '../domain/tree'
-import { formatPath } from '../navigation/path'
+import { ErrorAlert } from './ErrorAlert'
+import { pathTo } from '../navigation/path'
 
 interface PartUsageProps {
   part: Part
   current: Configuration // the configuration being viewed
-  machine: Configuration // the end unit we are inside
+  machine: Configuration // the root configuration (machine) we are inside
 }
 
 function PartName({ uuid }: { uuid: string }) {
@@ -20,7 +21,7 @@ function PartName({ uuid }: { uuid: string }) {
 function UsageLink({ route }: { route: Configuration[] }) {
   const last = route.at(-1)
   return (
-    <Anchor href={formatPath(route.map((config) => config.uuid))}>
+    <Anchor href={pathTo(route)}>
       {route.map((config, index) => (
         <span key={config.uuid}>
           {index > 0 && ' › '}
@@ -36,7 +37,8 @@ export function PartUsage({ part, current, machine }: PartUsageProps) {
   const [requested, setRequested] = useState(false)
   const tree = useMachineTree(machine, requested)
 
-  if (!requested) {
+  // Idle with no data: nothing has been fetched for this machine yet, so ask first.
+  if (tree.isPending && tree.fetchStatus === 'idle') {
     return (
       <Button variant="light" size="xs" w="fit-content" onClick={() => setRequested(true)}>
         Where else is this part used?
@@ -46,10 +48,7 @@ export function PartUsage({ part, current, machine }: PartUsageProps) {
   if (tree.isPending) return <Text size="sm" c="dimmed">Scanning machine…</Text>
   if (tree.isError) {
     return (
-      <Alert color="red" title="Could not scan the machine">
-        {tree.error.message}
-        <Button mt="xs" size="xs" display="flex" w="fit-content" onClick={() => tree.refetch()}>Retry</Button>
-      </Alert>
+      <ErrorAlert title="Could not scan the machine" error={tree.error} onRetry={() => tree.refetch()} />
     )
   }
 
@@ -57,22 +56,23 @@ export function PartUsage({ part, current, machine }: PartUsageProps) {
   const total = totalQuantity(tree.data, part.uuid)
   const others = findPartPaths(tree.data, part.uuid).filter((route) => route.at(-1)?.uuid !== current.uuid)
 
+  // Nowhere else: skip the summary line, it would only repeat the one place we are already viewing.
+  if (others.length === 0) {
+    return <Text size="sm" c="dimmed">There are no other uses besides in {part.partNo}</Text>
+  }
+
   return (
     <div>
       <Text size="sm" fw={600}>
-        {part.partNo} is used in {uses} place{uses === 1 ? '' : 's'} in this machine ({total} {part.unit} in total).
+        {part.partNo} is used in {uses} places in this machine ({total} {part.unit} in total); here, and:
       </Text>
-      {others.length === 0 ? (
-        <Text size="sm" c="dimmed">There are no other uses in this machine.</Text>
-      ) : (
-        <List size="sm" mt={4}>
-          {others.map((route) => (
-            <List.Item key={route.at(-1)?.uuid}>
-              <UsageLink route={route} />
-            </List.Item>
-          ))}
-        </List>
-      )}
+      <List size="sm" mt={4}>
+        {others.map((route) => (
+          <List.Item key={route.at(-1)?.uuid}>
+            <UsageLink route={route} />
+          </List.Item>
+        ))}
+      </List>
     </div>
   )
 }

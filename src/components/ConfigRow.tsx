@@ -5,16 +5,17 @@ import { StatusBadge } from './StatusBadge'
 
 interface ConfigRowProps {
   config: Configuration
-  onOpen: (config: Configuration) => void
+  href: string // where this row leads
 }
 
 // One clickable configuration in a list. Opening it navigates into that configuration.
-export function ConfigRow({ config, onOpen }: ConfigRowProps) {
+export function ConfigRow({ config, href }: ConfigRowProps) {
   const part = usePart(config.partUuid)
 
   return (
     <UnstyledButton
-      onClick={() => onOpen(config)}
+      component="a"
+      href={href}
       p="sm"
       style={{ border: '1px solid var(--mantine-color-gray-3)', borderRadius: 'var(--mantine-radius-sm)' }}
     >
@@ -22,7 +23,7 @@ export function ConfigRow({ config, onOpen }: ConfigRowProps) {
         <Group gap="sm" wrap="nowrap" style={{ minWidth: 0 }}>
           {config.endUnitSerialNo && <Text fw={700}>SN {config.endUnitSerialNo}</Text>}
           {part.isPending && <Text c="dimmed">Loading…</Text>}
-          {part.isError && <Text c="red">Could not load part</Text>}
+          {part.isError && <Text c="red" size="sm">Part unavailable</Text>}
           {part.data && (
             <>
               <Text ff="monospace" size="sm">{part.data.partNo}</Text>

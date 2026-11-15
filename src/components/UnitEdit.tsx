@@ -1,16 +1,22 @@
-import { Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
+import { Anchor, Button, Group, Modal, Stack, Text, TextInput } from '@mantine/core'
 import { notifications } from '@mantine/notifications'
 import { useState } from 'react'
 import { useUpdatePart } from '../api/queries'
 import type { Part } from '../api/types'
 
+// A small "Change unit" link that opens a modal. Meant to sit next to the quantity.
 export function UnitEdit({ part }: { part: Part }) {
   const update = useUpdatePart(part.uuid)
+  const [opened, setOpened] = useState(false)
   const [unit, setUnit] = useState(part.unit)
-  const [confirming, setConfirming] = useState(false)
 
   const trimmed = unit.trim()
   const changed = trimmed !== '' && trimmed !== part.unit
+
+  function open() {
+    setUnit(part.unit)
+    setOpened(true)
+  }
 
   function save() {
     update.mutate(
@@ -18,42 +24,40 @@ export function UnitEdit({ part }: { part: Part }) {
       {
         onSuccess: () => {
           notifications.show({ color: 'green', title: 'Unit changed', message: `${part.partNo} now uses "${trimmed}".` })
-          setConfirming(false)
+          setOpened(false)
         },
         onError: (error) => {
           notifications.show({ color: 'red', title: 'Unit not changed', message: error.message })
-          setConfirming(false)
+          setOpened(false)
         },
       },
     )
   }
 
   return (
-    <Group align="end">
-      <TextInput
-        label="Change unit to"
-        w={200}
-        value={unit}
-        onChange={(event) => setUnit(event.currentTarget.value)}
-        placeholder="e.g. pcs, set, m"
-      />
-      <Button variant="default" disabled={!changed} onClick={() => setConfirming(true)}>
+    <>
+      <Anchor component="button" type="button" size="sm" onClick={open}>
         Change unit
-      </Button>
-      <Modal opened={confirming} onClose={() => setConfirming(false)} title="Confirm unit change">
+      </Anchor>
+      <Modal opened={opened} onClose={() => setOpened(false)} title={`Change unit for ${part.partNo} ${part.name}`}>
         <Stack>
-          <Text>
-            Change the unit of {part.partNo} {part.name} from "{part.unit}" to "{trimmed}"?
-          </Text>
+          <TextInput
+            label="Unit"
+            description={`Currently "${part.unit}"`}
+            placeholder="e.g. pcs, set, m"
+            value={unit}
+            onChange={(event) => setUnit(event.currentTarget.value)}
+            data-autofocus
+          />
           <Text size="sm" c="dimmed">
             This updates the part everywhere it is used, including other time machines.
           </Text>
           <Group justify="flex-end">
-            <Button variant="default" onClick={() => setConfirming(false)}>Cancel</Button>
-            <Button loading={update.isPending} onClick={save}>Change unit</Button>
+            <Button variant="default" onClick={() => setOpened(false)}>Cancel</Button>
+            <Button disabled={!changed} loading={update.isPending} onClick={save}>Change unit</Button>
           </Group>
         </Stack>
       </Modal>
-    </Group>
+    </>
   )
 }

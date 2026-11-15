@@ -14,7 +14,7 @@ function mockChildren(byParent: Record<string, unknown[]>) {
     'fetch',
     vi.fn((url: string) => {
       const parent = new URL(url).searchParams.get('parentUuid') ?? 'root'
-      return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(byParent[parent] ?? []) })
+      return Promise.resolve({ ok: true, status: 200, text: () => Promise.resolve(JSON.stringify(byParent[parent] ?? [])) })
     }),
   )
 }
@@ -38,7 +38,7 @@ describe('useResolvedPath', () => {
     await waitFor(() => expect(result.current.status).toBe('not-found'))
   })
 
-  it('is ready with an empty path at the end unit list', () => {
+  it('is ready with an empty path at the root list', () => {
     const { result } = renderHook(() => useResolvedPath([]), { wrapper })
     expect(result.current).toEqual({ status: 'ready', path: [] })
   })

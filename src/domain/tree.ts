@@ -8,14 +8,20 @@ export interface TreeNode {
 
 // how many nodes in this tree (including `root` itself) reference `partUuid`?
 export function countPartUsages(root: TreeNode, partUuid: string): number {
-  return root.children.reduce((count, child) => count + countPartUsages(child, partUuid), root.config.partUuid === partUuid ? 1 : 0)
+  return root.children.reduce((count, child) => 
+    count + countPartUsages(child, partUuid), root.config.partUuid === partUuid ? 1 : 0
+  )
 }
 
 // total quantity of `partUuid` needed to build this machine.
 // A node's quantity is multiplied by the quantities of all its ancestors
 // (2 sub-assemblies x 3 screws each = 6 screws). Sum that over every matching node.
 export function totalQuantity(root: TreeNode, partUuid: string): number {
-  return root.children.reduce((total, child) => total + (totalQuantity(child, partUuid) * root.config.quantity), root.config.partUuid === partUuid ? root.config.quantity : 0)
+  return root.children.reduce((total, child) => 
+    total + (totalQuantity(child, partUuid) * root.config.quantity), root.config.partUuid === partUuid ? 
+      root.config.quantity : 
+      0
+  )
 }
 
 // Every place `partUuid` appears, as the route of configurations from `root` down to it.

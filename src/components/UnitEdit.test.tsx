@@ -8,14 +8,20 @@ import { UnitEdit } from './UnitEdit'
 const part: Part = { uuid: 'p1', partNo: 'TM-1020', name: 'Power Cell', status: 'active', unit: 'pcs' }
 
 describe('UnitEdit', () => {
-  it('only enables the button once the unit differs', async () => {
+  it('opens a modal and only enables saving once the unit differs', async () => {
     const user = userEvent.setup()
     renderWithProviders(<UnitEdit part={part} />)
-    const button = screen.getByRole('button', { name: 'Change unit' })
-    expect(button).toBeDisabled()
-    await user.clear(screen.getByLabelText('Change unit to'))
-    expect(button).toBeDisabled()
-    await user.type(screen.getByLabelText('Change unit to'), 'set')
-    expect(button).toBeEnabled()
+
+    await user.click(screen.getByRole('button', { name: 'Change unit' }))
+    const input = await screen.findByLabelText('Unit')
+    expect(input).toHaveValue('pcs')
+    expect(screen.getByText(/everywhere it is used/i)).toBeInTheDocument()
+
+    const save = screen.getAllByRole('button', { name: 'Change unit' }).at(-1)
+    expect(save).toBeDisabled()
+    await user.clear(input)
+    expect(save).toBeDisabled()
+    await user.type(input, 'set')
+    expect(save).toBeEnabled()
   })
 })
