@@ -32,3 +32,16 @@ describe('findPartPaths', () => {
   })
   it('is empty when the part is absent', () => expect(findPartPaths(tree, 'nope')).toEqual([]))
 })
+
+// frame(2)
+//   └─ frame(3)    the same part appears at two levels of one path
+const nestedFrames = node('frame', 2, [node('frame', 3)])
+
+describe('a part matching at two levels of the same path', () => {
+  it('counts both uses', () => expect(countPartUsages(nestedFrames, 'frame')).toBe(2))
+
+  it('adds the outer ones to the inner ones, multiplied by the outer quantity', () => {
+    // 2 outer frames, plus 3 inner frames inside each of them: 2 + 2 * 3
+    expect(totalQuantity(nestedFrames, 'frame')).toBe(8)
+  })
+})

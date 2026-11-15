@@ -83,7 +83,7 @@ export function useUpdatePart(uuid: string) {
 }
 
 async function loadTree(queryClient: QueryClient, config: Configuration): Promise<TreeNode> {
-  const kids = await queryClient.fetchQuery({
+  const kids = await queryClient.query({
     queryKey: queryKeys.children(config.uuid),
     queryFn: () => getChildConfigs(config.uuid),
     staleTime: FIVE_MINUTES,
