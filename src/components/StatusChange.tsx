@@ -4,7 +4,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useState } from 'react'
 import { getAllowableStatusesFromError } from '../api/client'
 import { queryKeys, useAllowedStatuses, useUpdatePart } from '../api/queries'
-import { statusMeta } from '../api/statusMeta'
+import { getStatusMetadata } from '../api/statusMeta'
 import type { AllowableStatuses, Part, PartStatus } from '../api/types'
 import { selectableStatuses } from '../domain/status'
 
@@ -44,7 +44,7 @@ export function StatusChange({ part }: { part: Part }) {
       { status: target },
       {
         onSuccess: () => {
-          notifications.show({ color: 'green', title: 'Status changed', message: `${part.partNo} is now ${statusMeta[target].label}.` })
+          notifications.show({ color: 'green', title: 'Status changed', message: `${part.partNo} is now ${getStatusMetadata(target).label}.` })
           setOpened(false)
         },
         onError: (error) => {
@@ -71,9 +71,9 @@ export function StatusChange({ part }: { part: Part }) {
         <Stack>
           <Select
             label="New status"
-            description={`Currently ${statusMeta[part.status].label}`}
+            description={`Currently ${getStatusMetadata(part.status).label}`}
             placeholder="Choose a new status"
-            data={options.map((status) => ({ value: status, label: statusMeta[status].label }))}
+            data={options.map((status) => ({ value: status, label: getStatusMetadata(status).label }))}
             value={target}
             onChange={(value) => setTarget(options.find((status) => status === value) ?? null)}
             allowDeselect={false}
