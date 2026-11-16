@@ -1,7 +1,6 @@
 import { Group, Loader, Paper, Stack, Text, Title } from '@mantine/core'
 import { usePart } from '../api/queries'
 import type { Configuration } from '../api/types'
-import { isFeatureEnabled } from '../features'
 import { ErrorAlert } from './ErrorAlert'
 import { PartUsage } from './PartUsage'
 import { StatusChange } from './StatusChange'
@@ -38,7 +37,7 @@ export function PartPanel({ config, machine }: PartPanelProps) {
           <Text>{config.quantity} {data.unit}</Text>
           <UnitEdit part={data} />
         </Group>
-        {isFeatureEnabled('usage') && <PartUsage part={data} current={config} machine={machine} />}
+        <PartUsage part={data} current={config} machine={machine} />
       </Stack>
     </Paper>
   )

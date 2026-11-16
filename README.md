@@ -22,11 +22,9 @@ npm run dev
 - **Errors**: normalized in `src/api/client.ts`, shown inline with Retry, plus an error boundary and an API health banner.
 - **Domain logic** (`src/domain`, `src/navigation/path.ts`) is pure and unit tested.
 
-## Optional features (URL flag)
+## Where else is a part used?
 
-Features that cost extra API calls are off by default. Enable with `?features=usage`:
-
-- `usage`: "Where else is this part used?" crawls the machine (about one request per parent) and links to each use.
+The part panel has a "Where else is this part used?" button. The API cannot search by part, so clicking it crawls the machine (about one request per parent, 26 for the sample machine) and then lists links to every other place the part appears, with the total quantity. Nothing is requested until the button is clicked, and the result stays cached for that machine.
 
 Add `?debug=true` (dev server only) to show the React Query devtools.
 
