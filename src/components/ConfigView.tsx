@@ -41,6 +41,15 @@ function RootConfigurations() {
     ?.filter((c) => (c.endUnitSerialNo ?? '').includes(filter.trim()))
     .sort((a, b) => (a.endUnitSerialNo ?? '').localeCompare(b.endUnitSerialNo ?? ''))
 
+  // "20 root configurations", or "3 of 20" while filtering. Nothing to show until loaded.
+  const total = roots.data?.length
+  const countText =
+    total === undefined || configs === undefined
+      ? undefined
+      : filter.trim() === ''
+        ? `${total} root configurations`
+        : `${configs.length} of ${total}`
+
   return (
     <Stack>
       <TextInput
@@ -49,6 +58,7 @@ function RootConfigurations() {
         value={filter}
         onChange={(event) => setFilter(event.currentTarget.value)}
       />
+      {countText && <Text size="sm" c="dimmed">{countText}</Text>}
       <ConfigList
         state={{ configs, isPending: roots.isPending, error: roots.error, refetch: roots.refetch }}
         empty="No root configurations match."
@@ -69,7 +79,7 @@ function ConfigDetail({ config, machine, path }: { config: Configuration; machin
       <PartPanel config={config} machine={machine} />
       {!isLeaf && (
         <Stack>
-          <Title order={4}>Contains</Title>
+          <Title order={4}>Contains{children.data ? ` (${children.data.length})` : ''}</Title>
           <ConfigList
             state={{ configs: children.data, isPending: children.isPending, error: children.error, refetch: children.refetch }}
             empty="Nothing below this configuration."
