@@ -1,4 +1,4 @@
-import { Anchor, Button, List, Text } from '@mantine/core'
+import { Anchor, Breadcrumbs, Button, List, Text } from '@mantine/core'
 import { useState } from 'react'
 import { useMachineTree, usePart } from '../api/queries'
 import type { Configuration, Part } from '../api/types'
@@ -17,19 +17,20 @@ function PartName({ uuid }: { uuid: string }) {
   return <>{part.data?.name ?? '…'}</>
 }
 
-// "Machine › Safety System › Power Cell", linking to that configuration.
+// "Machine / Safety System / Power Cell (×1)", the same look as the page breadcrumb.
+// Every name links to that level of the hierarchy.
 function UsageLink({ route }: { route: Configuration[] }) {
-  const last = route.at(-1)
   return (
-    <Anchor href={pathTo(route)}>
+    <Breadcrumbs separatorMargin="xs">
       {route.map((config, index) => (
         <span key={config.uuid}>
-          {index > 0 && ' › '}
-          <PartName uuid={config.partUuid} />
+          <Anchor href={pathTo(route.slice(0, index + 1))}>
+            <PartName uuid={config.partUuid} />
+          </Anchor>
+          {index === route.length - 1 && ` (×${config.quantity})`}
         </span>
       ))}
-      {last && ` (×${last.quantity})`}
-    </Anchor>
+    </Breadcrumbs>
   )
 }
 
